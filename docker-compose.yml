@@ -1,34 +1,56 @@
-# Versión utilizada
-version: '3'
+version: '3.8'
 
-# Configuración de los servidores que vamos a necesitar
-services: 
- 
-  # mysql es el nombre que vamos a dar a este primer servicio
-  # Será el nombre que tendremos que usar cuando nos refiramos a él
-  mysql:
+services:
+  db:
     image: mysql:5.7
-    ports:
-      - 3306:3306
+    restart: always
     environment:
+      MYSQL_DATABASE: dwes
+      MYSQL_USER: dwes
+      MYSQL_PASSWORD: dwes
       MYSQL_ROOT_PASSWORD: root
-      MYSQL_USER: froga
-      MYSQL_PASSWORD: froga
-      MYSQL_DATABASE: froga
+    volumes:
+      - ./mysql:/docker-entrypoint-initdb.d
+      - db_data:/var/lib/mysql
+
+  wordpress:
+    image: wordpress:latest
+    restart: always
+    ports:
+      - "8080:80"
+    environment:
+      WORDPRESS_DB_HOST: db:3306
+      WORDPRESS_DB_USER: dwes
+      WORDPRESS_DB_PASSWORD: dwes
+      WORDPRESS_DB_NAME: dwes
+    depends_on:
+      - db
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    restart: always
+    ports:
+      - "8081:80"
+    environment:
+      PMA_HOST: db
+      MYSQL_ROOT_PASSWORD: root
+    depends_on:
+      - db
 
   apache:
     build: apache/
-    ports:
+    ports: 
       - 80:80
     volumes:
-      - proyecto:/var/www/html/
+      - web:/var/www/html/
 
   php:
     build: php/
     ports:
       - 9000:9000
     volumes:
-      - proyecto:/var/www/html/
+      - web:/var/www/html
 
-volumes: 
-  proyecto:
+volumes:
+  db_data:
+  web:
